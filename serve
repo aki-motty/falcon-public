@@ -4,6 +4,10 @@ USERNAME=ubuntu
 
 REPO=https://github.com/aki-motty/falcon-public.git
 
+git add .
+git commit -m "To update the repositories of each party"
+git push origin master
+
 #LAN->1,2,3
 IP1=3.131.77.189			#Ohio
 IP2=3.132.42.147  		#Ohio
@@ -18,7 +22,7 @@ IP5=3.9.234.48  			#London
 NETWORK=SecureML 			# NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
 DATASET=MNIST 			# DATASET {MNIST, CIFAR10, and ImageNet}
 SECURITY=Semi-honest 		# SECURITY {Semi-honest or Malicious} 
-RUN_TYPE=WAN 				# RUN_TYPE {LAN or WAN or localhost}
+RUN_TYPE=LAN 				# RUN_TYPE {LAN or WAN or localhost}
 PRINT_TO_FILE=true			# PRINT_TO_FILE {true or false}
 FILENAME=time.txt
 #########################################################################################
@@ -31,13 +35,13 @@ fi
 
 
 if [[ $RUN_TYPE = LAN ]]; then
-	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP2 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP3 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
+	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
+	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP2 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
+	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP3 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
 elif [[ $RUN_TYPE = WAN ]]; then
-	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon-tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon-london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
+	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
+	ssh -i ~/.ssh/falcon-tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
+	ssh -i ~/.ssh/falcon-london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
 else
 	echo "RUN_TYPE error" 
 fi
