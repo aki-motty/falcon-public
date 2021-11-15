@@ -62,8 +62,6 @@ void FCLayer::forward(const RSSVectorMyType &inputActivation)
 	size_t common_dim = conf.inputDim;
 	size_t size = rows*columns;
 
-	cout << inputActivation.size() << " = " << rows * common_dim << endl;
-
 	if (FUNCTION_TIME)
 		cout << "funcMatMul: " << funcTime(funcMatMul, inputActivation, weights, activations, rows, common_dim, columns, 0, 0, FLOAT_PRECISION) << endl;
 	else
