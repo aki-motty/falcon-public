@@ -20,6 +20,7 @@ void FCLayer::initialize()
 {
 	//Initialize weights and biases here.
 	//Ensure that initialization is correctly done.
+    // for random value
 	size_t lower = 30;
 	size_t higher = 50;
 	size_t decimation = 10000;
@@ -61,10 +62,13 @@ void FCLayer::forward(const RSSVectorMyType &inputActivation)
 	size_t common_dim = conf.inputDim;
 	size_t size = rows*columns;
 
+	cout << inputActivation.size() << " = " << rows * common_dim << endl;
+
 	if (FUNCTION_TIME)
 		cout << "funcMatMul: " << funcTime(funcMatMul, inputActivation, weights, activations, rows, common_dim, columns, 0, 0, FLOAT_PRECISION) << endl;
 	else
 		funcMatMul(inputActivation, weights, activations, rows, common_dim, columns, 0, 0, FLOAT_PRECISION);
+
 
 	for(size_t r = 0; r < rows; ++r)
 		for(size_t c = 0; c < columns; ++c)
@@ -81,6 +85,7 @@ void FCLayer::computeDelta(RSSVectorMyType& prevDelta)
 	size_t columns = conf.inputDim;
 	size_t common_dim = conf.outputDim;
 	
+
 	if (FUNCTION_TIME)
 		cout << "funcMatMul: " << funcTime(funcMatMul, deltas, weights, prevDelta, rows, common_dim, columns, 0, 1, FLOAT_PRECISION) << endl;
 	else

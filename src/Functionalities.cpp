@@ -311,6 +311,7 @@ void funcReconstruct(const RSSVectorMyType &a, vector<myType> &b, size_t size, s
 	log_print("Reconst: RSSMyType, myType");
 	assert(a.size() == size && "a.size mismatch for reconstruct function");
 
+	string output_type = "FLOAT";
 	if (SECURITY_TYPE.compare("Semi-honest") == 0)
 	{
 		vector<myType> a_next(size), a_prev(size);
@@ -339,7 +340,7 @@ void funcReconstruct(const RSSVectorMyType &a, vector<myType> &b, size_t size, s
 		{
 			std::cout << str << ": \t\t";
 			for (int i = 0; i < size; ++i)
-				print_linear(b[i], "SIGNED");
+				print_linear(b[i], output_type);
 			std::cout << std::endl;
 		}
 	}
@@ -377,7 +378,7 @@ void funcReconstruct(const RSSVectorMyType &a, vector<myType> &b, size_t size, s
 		{
 			std::cout << str << ": \t\t";
 			for (int i = 0; i < size; ++i)
-				print_linear(b[i], "SIGNED");
+				print_linear(b[i], output_type);
 			std::cout << std::endl;
 		}
 	}

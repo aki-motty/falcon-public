@@ -19,7 +19,7 @@
 # Location of OPENSSL installation if running over servers without sudo access
 OPEN_SSL_LOC := /data/swagh/conda
 # RUN_TYPE {localhost, LAN or WAN} 
-RUN_TYPE := localhost
+RUN_TYPE := LAN
 # NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
 NETWORK := MiniONN
 # Dataset {MNIST, CIFAR10, and ImageNet}

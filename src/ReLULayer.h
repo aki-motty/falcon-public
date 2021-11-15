@@ -16,9 +16,10 @@ private:
 	ReLUConfig conf;
 	RSSVectorMyType activations;
 	RSSVectorMyType deltas;
-	RSSVectorSmallType reluPrime;
+	
 
 public:
+    RSSVectorSmallType reluPrime;
 	//Constructor and initializer
 	ReLULayer(ReLUConfig* conf, int _layerNum);
 

@@ -28,17 +28,17 @@ extern CommunicationObject commObject;
 //setting up communication
 void initCommunication(string addr, int port, int player, int mode)
 {
-	char temp[25];
+  char temp[25];
 	strcpy(temp, addr.c_str());
 	if (mode == 0)
 	{
 		communicationSenders[player] = new BmrNet(temp, port);
-		communicationSenders[player]->connectNow();
-	}
+    communicationSenders[player]->connectNow();
+  }
 	else
 	{
 		communicationReceivers[player] = new BmrNet(port);
-		communicationReceivers[player]->listenNow();
+    communicationReceivers[player]->listenNow();
 	}
 }
 
@@ -69,7 +69,8 @@ void initializeCommunicationSerial(int* ports)//Use this for many parties
 {
 	communicationSenders = new BmrNet*[NUM_OF_PARTIES];
 	communicationReceivers = new BmrNet*[NUM_OF_PARTIES];
-	for (int i = 0; i < NUM_OF_PARTIES; i++)
+  
+  for (int i = 0; i < NUM_OF_PARTIES; i++)
 	{
 		if (i<partyNum)
 		{
@@ -100,13 +101,13 @@ void initializeCommunication(char* filename, int p)
 		fgets(buff, STRING_BUFFER_SIZE, f);
 		sscanf(buff, "%s\n", ip);
 		addrs[i] = string(ip);
-		//cout << addrs[i] << endl;
+		cout << addrs[i] << endl;
 		ports[2 * i] = 32000 + i*NUM_OF_PARTIES + partyNum;
 		ports[2 * i + 1] = 32000 + partyNum*NUM_OF_PARTIES + i;
 	}
-
+  
 	fclose(f);
-	initializeCommunicationSerial(ports);
+  initializeCommunicationSerial(ports);
 
 	delete[] ports;
 }
