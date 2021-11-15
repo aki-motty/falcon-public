@@ -3,20 +3,20 @@
 USERNAME=ubuntu
 
 #LAN->1,2,3
-IP1=3.131.77.189			#Oregon
-IP2=3.132.42.147  			#Oregon
-IP3=3.136.57.237			#Oregon
+IP1=3.131.77.189			#Ohio
+IP2=3.132.42.147  		#Ohio
+IP3=3.136.57.237			#Ohio
 
 #WAN->1,4,5
-IP4=52.23.63.224			#Virginia
-IP5=54.215.77.155			#Cali
+IP4=54.168.225.46     #Tokyo
+IP5=3.9.234.48  			#London
 
 
 #########################################################################################
 NETWORK=SecureML 			# NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
 DATASET=MNIST 			# DATASET {MNIST, CIFAR10, and ImageNet}
 SECURITY=Semi-honest 		# SECURITY {Semi-honest or Malicious} 
-RUN_TYPE=LAN 				# RUN_TYPE {LAN or WAN or localhost}
+RUN_TYPE=WAN 				# RUN_TYPE {LAN or WAN or localhost}
 PRINT_TO_FILE=true			# PRINT_TO_FILE {true or false}
 FILENAME=time.txt
 #########################################################################################
@@ -34,8 +34,8 @@ if [[ $RUN_TYPE = LAN ]]; then
 	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP3 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); echo maked; chmod +x Falcon.out; ./Falcon.out 2 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt" & 
 elif [[ $RUN_TYPE = WAN ]]; then
 	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); chmod +x Falcon.out; ./Falcon.out 0 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt; less time.txt" & 
-	ssh -i ~/.ssh/falcon_virg.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); chmod +x Falcon.out; ./Falcon.out 1 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt" & 
-	ssh -i ~/.ssh/falcon_cali.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); chmod +x Falcon.out; ./Falcon.out 2 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt" & 
+	ssh -i ~/.ssh/falcon-tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); chmod +x Falcon.out; ./Falcon.out 1 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt" & 
+	ssh -i ~/.ssh/falcon-london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; make all -j$(nproc); chmod +x Falcon.out; ./Falcon.out 2 files/IP_$RUN_TYPE files/keyA files/keyAB files/keyAC $NETWORK $DATASET $SECURITY 1>./time.txt" & 
 elif [[ $RUN_TYPE = localhost ]]; then
 	make all
 	./Falcon.out 1 files/IP_$RUN_TYPE files/keyB files/keyBC files/keyAB $NETWORK $DATASET $SECURITY >/dev/null &
