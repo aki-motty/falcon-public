@@ -36,8 +36,8 @@ if [[ $RUN_TYPE = LAN ]]; then
 	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP3 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
 elif [[ $RUN_TYPE = WAN ]]; then
 	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon_tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
-	ssh -i ~/.ssh/falcon_london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
+	ssh -i ~/.ssh/falcon-tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
+	ssh -i ~/.ssh/falcon-london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git pull origin master" & 
 else
 	echo "RUN_TYPE error" 
 fi
