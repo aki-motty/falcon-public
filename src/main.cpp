@@ -102,6 +102,8 @@ int main(int argc, char **argv)
 
   size_t size = B * L * H * D;
 
+  cout << size << endl;
+
   vector<myType> origin_input(size);
   RSSVectorMyType shared_input(size);
   for (size_t b = 0; b < B; ++b)
