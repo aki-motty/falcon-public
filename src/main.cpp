@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 128;
   size_t H = 8;
-  size_t L = 16;
+  size_t L = 32;
   // size_t D = 4;
   size_t D = DM / H;
   // size_t M = 6;
