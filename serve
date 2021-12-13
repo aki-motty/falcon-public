@@ -15,7 +15,8 @@ IP3=3.136.57.237			#Ohio
 
 #WAN->1,4,5
 IP4=54.168.225.46     #Tokyo
-IP5=3.9.234.48  			#London
+# IP5=3.9.234.48  			#London
+IP5=52.215.29.89  			#Ireland
 
 
 #########################################################################################
@@ -41,7 +42,7 @@ if [[ $RUN_TYPE = LAN ]]; then
 elif [[ $RUN_TYPE = WAN ]]; then
 	ssh -i ~/.ssh/falcon-lan1.pem $USERNAME@$IP1 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
 	ssh -i ~/.ssh/falcon-tokyo.pem $USERNAME@$IP4 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
-	ssh -i ~/.ssh/falcon-london.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
+	ssh -i ~/.ssh/falcon-ire.pem $USERNAME@$IP5 "pkill Falcon.out; echo clean completed; cd falcon-public; git fetch origin master; git reset --hard origin/master" & 
 else
 	echo "RUN_TYPE error" 
 fi
