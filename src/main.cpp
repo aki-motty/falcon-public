@@ -114,8 +114,8 @@ int main(int argc, char **argv)
   size_t M = static_cast<size_t>(D * log(D));
   bool causal = true;
   float attn_norm = 1.0;
-  // MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
-  // MHAttention *mha = new MHAttention(cfg_mha, 0);
+  MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
+  MHAttention *mha = new MHAttention(cfg_mha, 0);
   // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
   // EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
   // EncoderConfig *cfg_enc = new EncoderConfig(H, L, DM, B, DFF, num_layer);
