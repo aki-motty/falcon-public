@@ -155,10 +155,10 @@ int main(int argc, char **argv)
   // ffn->forward(shared_input);
   // ln->forward(shared_input);
   // encl->forward(shared_input);
-  enc->forward(shared_input);
-  // decl->forward(shared_input, shared_input);
+  // enc->forward(shared_input);
+  decl->forward(shared_input, shared_input);
   // dec->forward(shared_input);
-  end_m("enc forward");
+  end_m("decl forward");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
@@ -167,18 +167,18 @@ int main(int argc, char **argv)
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
-  enc->computeDelta(prevDelta);
-  // decl->computeDelta(prevDelta, prevEncoderDelta);
+  // enc->computeDelta(prevDelta);
+  decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
   // mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
-  enc->updateEquations(shared_input);
-  // decl->updateEquations(shared_input, *(enc->getActivation()));
+  // enc->updateEquations(shared_input);
+  decl->updateEquations(shared_input, *(enc->getActivation()));
   // dec->updateEquations(shared_input);
-  end_m("enc backward");
+  end_m("decl backward");
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
