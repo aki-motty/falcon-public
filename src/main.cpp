@@ -116,8 +116,8 @@ int main(int argc, char **argv)
   float attn_norm = 1.0;
   // MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
   // MHAttention *mha = new MHAttention(cfg_mha, 0);
-  // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
-  // EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
+  EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
+  EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
   // EncoderConfig *cfg_enc = new EncoderConfig(H, L, DM, B, DFF, num_layer);
   // Encoder *enc = new Encoder(cfg_enc, 0);
   // DecoderLayerConfig *cfg_decl = new DecoderLayerConfig(H, L, DM, B, DFF);
@@ -126,8 +126,8 @@ int main(int argc, char **argv)
   // Decoder *dec = new Decoder(cfg_dec, 0, enc);
   // FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
   // FFN *ffn = new FFN(cfg_ffn, 0);
-  LNConfig *cfg_ln = new LNConfig(DM, B * L);
-  LNLayer *ln = new LNLayer(cfg_ln, 0);
+  // LNConfig *cfg_ln = new LNConfig(DM, B * L);
+  // LNLayer *ln = new LNLayer(cfg_ln, 0);
 
   size_t size = B * L * H * D;
 
