@@ -178,7 +178,7 @@ int main(int argc, char **argv)
   // enc->updateEquations(shared_input);
   decl->updateEquations(shared_input, shared_input);
   // dec->updateEquations(shared_input);
-  end_m("decl backward");
+  end_m("declbackward");
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
