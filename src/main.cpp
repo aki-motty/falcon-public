@@ -163,7 +163,7 @@ int main(int argc, char **argv)
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
   start_m();
-  // mha->computeDelta(prevDelta);
+  mha->computeDelta(prevDelta);
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  // mha->updateEquations(shared_input);
+  mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
