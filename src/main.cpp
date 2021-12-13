@@ -152,17 +152,19 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   start_m();
-  // mha->forward(shared_input);
+  mha->forward(shared_input);
   // ffn->forward(shared_input);
   // ln->forward(shared_input);
   // encl->forward(shared_input);
   // enc->forward(shared_input);
   // decl->forward(shared_input, shared_input);
   // dec->forward(shared_input);
+  end_m("forward");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
-  // mha->computeDelta(prevDelta);
+  start_m();
+  mha->computeDelta(prevDelta);
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
@@ -170,14 +172,14 @@ int main(int argc, char **argv)
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  // mha->updateEquations(shared_input);
+  mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);
   // decl->updateEquations(shared_input, *(enc->getActivation()));
   // dec->updateEquations(shared_input);
-
+  end_m("backward");
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
@@ -256,7 +258,7 @@ int main(int argc, char **argv)
 
   // layer->updateEquations(shared_input);
 
-  end_m(network);
+  // end_m(network);
   cout << "----------------------------------------------" << endl;
   cout << "Run details: " << NUM_OF_PARTIES << "PC (P" << partyNum
        << "), " << NUM_ITERATIONS << " iterations, batch size " << MINI_BATCH_SIZE << endl
