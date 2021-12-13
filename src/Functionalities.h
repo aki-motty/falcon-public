@@ -37,9 +37,13 @@ void funcSelectBitShares(const RSSVectorSmallType &a0, const RSSVectorSmallType 
 						 size_t rows, size_t columns, size_t loopCounter);
 void funcRELUPrime(const RSSVectorMyType &a, RSSVectorSmallType &b, size_t size);
 void funcRELU(const RSSVectorMyType &a, RSSVectorSmallType &temp, RSSVectorMyType &b, size_t size);
+void funcApproxInverseSqrt(const RSSVectorMyType &x, RSSVectorMyType &alpha, RSSVectorMyType &beta, size_t size);
+void funcDivisionHelper(const RSSVectorMyType &x, RSSVectorMyType &alpha, RSSVectorMyType &beta, size_t size);
 void funcPow(const RSSVectorMyType &b, vector<smallType> &alpha, size_t size);
 void funcDivision(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient, 
 							size_t size);
+void funcDivision2(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient,
+                  size_t size);
 void funcBatchNorm(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient, 
 							size_t batchSize, size_t B);
 void funcMaxpool(RSSVectorMyType &a, RSSVectorMyType &max, RSSVectorSmallType &maxPrime, 
