@@ -114,8 +114,8 @@ int main(int argc, char **argv)
   size_t M = static_cast<size_t>(D * log(D));
   bool causal = true;
   float attn_norm = 1.0;
-  MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
-  MHAttention *mha = new MHAttention(cfg_mha, 0);
+  // MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
+  // MHAttention *mha = new MHAttention(cfg_mha, 0);
   // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
   // EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
   // EncoderConfig *cfg_enc = new EncoderConfig(H, L, DM, B, DFF, num_layer);
@@ -126,8 +126,8 @@ int main(int argc, char **argv)
   // Decoder *dec = new Decoder(cfg_dec, 0, enc);
   // FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
   // FFN *ffn = new FFN(cfg_ffn, 0);
-  // LNConfig *cfg_ln = new LNConfig(DM, B * L);
-  // LNLayer *ln = new LNLayer(cfg_ln, 0);
+  LNConfig *cfg_ln = new LNConfig(DM, B * L);
+  LNLayer *ln = new LNLayer(cfg_ln, 0);
 
   size_t size = B * L * H * D;
 
@@ -151,34 +151,34 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   start_m();
-  mha->forward(shared_input);
-  // ffn->forward(shared_input);
+  // mha->forward(shared_input);
+  ffn->forward(shared_input);
   // ln->forward(shared_input);
   // encl->forward(shared_input);
   // enc->forward(shared_input);
   // decl->forward(shared_input, shared_input);
   // dec->forward(shared_input);
-  end_m("mha forward");
+  end_m("ffn forward");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
   start_m();
-  mha->computeDelta(prevDelta);
-  // ffn->computeDelta(prevDelta);
+  // mha->computeDelta(prevDelta);
+  ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
   // enc->computeDelta(prevDelta);
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  mha->updateEquations(shared_input);
-  // ffn->updateEquations(shared_input);
+  // mha->updateEquations(shared_input);
+  ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);
   // decl->updateEquations(shared_input, *(enc->getActivation()));
   // dec->updateEquations(shared_input);
-  end_m("mha backward");
+  end_m("ffn backward");
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
