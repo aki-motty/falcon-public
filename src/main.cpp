@@ -151,8 +151,8 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   start_m();
-  // mha->forward(shared_input);
-  ffn->forward(shared_input);
+  mha->forward(shared_input);
+  // ffn->forward(shared_input);
   // ln->forward(shared_input);
   // encl->forward(shared_input);
   // enc->forward(shared_input);
@@ -163,16 +163,16 @@ int main(int argc, char **argv)
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
   start_m();
-  // mha->computeDelta(prevDelta);
-  ffn->computeDelta(prevDelta);
+  mha->computeDelta(prevDelta);
+  // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
   // enc->computeDelta(prevDelta);
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  // mha->updateEquations(shared_input);
-  ffn->updateEquations(shared_input);
+  mha->updateEquations(shared_input);
+  // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);

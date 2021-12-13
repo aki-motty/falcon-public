@@ -9,14 +9,15 @@ IP3=3.136.57.237			#Ohio
 
 #WAN->1,4,5
 IP4=54.168.225.46     #Tokyo
-IP5=3.9.234.48  			#London
+# IP5=3.9.234.48  			#London
+IP5=52.215.29.89  			#Ireland
 
 
 #########################################################################################
 NETWORK=SecureML 			# NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
 DATASET=MNIST 			# DATASET {MNIST, CIFAR10, and ImageNet}
 SECURITY=Semi-honest 		# SECURITY {Semi-honest or Malicious} 
-RUN_TYPE=LAN 				# RUN_TYPE {LAN or WAN or localhost}
+RUN_TYPE=WAN 				# RUN_TYPE {LAN or WAN or localhost}
 PRINT_TO_FILE=true			# PRINT_TO_FILE {true or false}
 FILENAME=time.txt
 #########################################################################################
