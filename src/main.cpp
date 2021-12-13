@@ -124,10 +124,10 @@ int main(int argc, char **argv)
   // DecoderLayer *decl = new DecoderLayer(cfg_decl, 0);
   // DecoderConfig *cfg_dec = new DecoderConfig(H, L, DM, B, DFF, num_layer);
   // Decoder *dec = new Decoder(cfg_dec, 0, enc);
-  // FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
-  // FFN *ffn = new FFN(cfg_ffn, 0);
-  LNConfig *cfg_ln = new LNConfig(DM, B * L);
-  LNLayer *ln = new LNLayer(cfg_ln, 0);
+  FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
+  FFN *ffn = new FFN(cfg_ffn, 0);
+  // LNConfig *cfg_ln = new LNConfig(DM, B * L);
+  // LNLayer *ln = new LNLayer(cfg_ln, 0);
 
   size_t size = B * L * H * D;
 
