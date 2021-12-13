@@ -73,7 +73,6 @@ int main(int argc, char **argv)
   //  network += " preloaded"; PRELOADING = true;
   //  preload_network(PRELOADING, network, net);
 
-  
   // Run unit tests in two modes:
   //	1. Debug {Mat-Mul, DotProd, PC, Wrap, ReLUPrime, ReLU, Division, BN, SSBits, SS, and Maxpool}
   //	2. Test {Mat-Mul1, Mat-Mul2, Mat-Mul3 (and similarly) Conv*, ReLU*, ReLUPrime*, and Maxpool*} where * = {1,2,3}
@@ -186,7 +185,7 @@ int main(int argc, char **argv)
   // funcApproxInverseSqrt(shared_input, alpha, beta, size);
   // funcReconstruct(alpha, tmp, size, "alpha", true);
   // funcReconstruct(beta, tmp, size, "beta", true);
-  
+
   // vector<myType> reverse_input(size);
   // RSSVectorMyType quotient(size);
   // copyVectors(origin_input, reverse_input, size);
