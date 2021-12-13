@@ -265,8 +265,6 @@ int main(int argc, char **argv)
   cout << "----------------------------------------------" << endl
        << endl;
 
-  // printNetwork(net);
-
   /****************************** CLEAN-UP ******************************/
   delete aes_indep;
   delete aes_next;
