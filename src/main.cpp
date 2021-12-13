@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
-  bool causal = true;
+  bool causal = false;
   float attn_norm = 1.0;
   MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
   MHAttention *mha = new MHAttention(cfg_mha, 0);
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
   start_m();
-  mha->computeDelta(prevDelta);
+  // mha->computeDelta(prevDelta);
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  mha->updateEquations(shared_input);
+  // mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
