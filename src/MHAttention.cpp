@@ -189,7 +189,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   // q = inputActivation (batch_size, seq_len, d_model)
   // k = inputActivation (batch_size, seq_len, d_model)
   // v = inputActivation (batch_size, seq_len, d_model)
-  log_print("MHAttention.forward");
+  log_print("MHAttention.forward_");
 
   size_t B = conf.batchSize;
   size_t NH = conf.num_heads;
