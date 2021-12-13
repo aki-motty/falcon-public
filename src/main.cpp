@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   // enc->forward(shared_input);
   // decl->forward(shared_input, shared_input);
   // dec->forward(shared_input);
-  end_m("ffn forward");
+  end_m("ffnforward");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
