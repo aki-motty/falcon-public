@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L = 256;
+  size_t L = 1;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
@@ -125,8 +125,8 @@ int main(int argc, char **argv)
   cout << "M : " << M << endl;
   cout << "causal : " << causal << endl;
  
-  MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
-  MHAttention *mha = new MHAttention(cfg_mha, 0);
+  // MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
+  // MHAttention *mha = new MHAttention(cfg_mha, 0);
   // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
   // EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
   // EncoderConfig *cfg_enc = new EncoderConfig(H, L, DM, B, DFF, num_layer);
@@ -162,15 +162,15 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   // start_m();
-  for (int i = 0; i < 10; ++i) {
-      mha->forward(shared_input);
-      // ffn->forward(shared_input);
-      // ln->forward(shared_input);
-      // encl->forward(shared_input);
-      // enc->forward(shared_input);
-      // decl->forward(shared_input, shared_input);
-      // dec->forward(shared_input);
-  }
+  // for (int i = 0; i < 10; ++i) {
+  //     mha->forward(shared_input);
+  //     // ffn->forward(shared_input);
+  //     // ln->forward(shared_input);
+  //     // encl->forward(shared_input);
+  //     // enc->forward(shared_input);
+  //     // decl->forward(shared_input, shared_input);
+  //     // dec->forward(shared_input);
+  // }
 
   // end_m("forward");
 
@@ -213,24 +213,24 @@ int main(int argc, char **argv)
   // funcDivision2(shared_input, shared_reverse_input, quotient, size);
   // funcReconstruct(quotient, tmp, size, "quotient", true);
 
-  vector<myType> origin_QK(B*H*L*L);
-  RSSVectorMyType shared_QK(B*H*L*L);
-  for (size_t b = 0; b < B; ++b)
-  {
-    for (size_t h = 0; h < H; ++h) {
-      for (size_t l = 0; l < L; ++l) {
-        for (size_t k = 0; k < L; ++k) {
-          origin_QK[b * (H * L * L) + h * (L * L) + l * L + k] = floatToMyType((float)pow(1, b + l + h + k) * (b + l + h + k + 0.01) * 0.1);
-          // print_linear(origin_QK[b * (H * L * L) + h * (L * L) + l * L + k], "FLOAT");
-        }
-        // cout << endl;
-      }
-      // cout << endl;
-    }
-    // cout << endl;
-  }
-  // cout << endl;
-  funcGetShares(shared_QK, origin_QK);
+  // vector<myType> origin_QK(B*H*L*L);
+  // RSSVectorMyType shared_QK(B*H*L*L);
+  // for (size_t b = 0; b < B; ++b)
+  // {
+  //   for (size_t h = 0; h < H; ++h) {
+  //     for (size_t l = 0; l < L; ++l) {
+  //       for (size_t k = 0; k < L; ++k) {
+  //         origin_QK[b * (H * L * L) + h * (L * L) + l * L + k] = floatToMyType((float)pow(1, b + l + h + k) * (b + l + h + k + 0.01) * 0.1);
+  //         // print_linear(origin_QK[b * (H * L * L) + h * (L * L) + l * L + k], "FLOAT");
+  //       }
+  //       // cout << endl;
+  //     }
+  //     // cout << endl;
+  //   }
+  //   // cout << endl;
+  // }
+  // // cout << endl;
+  // funcGetShares(shared_QK, origin_QK);
 
   // vector<myType> tmp(B*H*L*L);
   // RSSVectorMyType out(B*H*L*L);
@@ -256,15 +256,15 @@ int main(int argc, char **argv)
   // }
   // cout << endl;
 
-  // vector<myType> tmp(B*H*L*D);
-  // RSSVectorMyType out(B*H*L*D);
-  // start_m();
-  // for (int i = 0; i < 10; ++i) {
+  vector<myType> tmp(B*H*L*D);
+  RSSVectorMyType out(B*H*L*D);
+  start_m();
+  for (int i = 0; i < 10; ++i) {
     
-  //     funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, false);
+      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, false);
     
-  // }
-  // end_m("softmaxattention");
+  }
+  end_m("softmaxattention");
   
   // funcReconstruct(out, tmp, B*H*L*D, "softmaxAttention", true);
 
