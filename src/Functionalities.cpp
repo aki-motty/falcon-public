@@ -1604,8 +1604,8 @@ void funcDivision2(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVector
 
   RSSVectorMyType x(size);
   funcDotProduct(b, alpha, x, size, true, FLOAT_PRECISION);
-  vector<myType> out(size);
-  funcReconstruct(x, out, size, "out", true);
+  // vector<myType> out(size);
+  // funcReconstruct(x, out, size, "out", true);
 
   const myType constTwoPointNine = ((myType)(2.9142 * (1 << FLOAT_PRECISION)));
   const myType constOne = ((myType)(1 * (1 << FLOAT_PRECISION)));
@@ -1631,9 +1631,9 @@ void funcDivision2(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVector
 
   // RSSVectorMyType scaledA(size);
   // multiplyByScalar(a, (1 << (alpha + 1)), scaledA);
-  funcReconstruct(answer, out, size, "answer", true);
+  // funcReconstruct(answer, out, size, "answer", true);
   funcDotProduct(answer, alpha, answer, size, true, FLOAT_PRECISION);
-  funcReconstruct(answer, out, size, "scaled answer", true);
+  // funcReconstruct(answer, out, size, "scaled answer", true);
   funcDotProduct(answer, a, quotient, size, true, FLOAT_PRECISION);
 }
 
@@ -1684,6 +1684,24 @@ void funcBatchNorm(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVector
   funcDotProduct(b_repeat, a, quotient, batchSize * B, true, (2 * precision - FLOAT_PRECISION)); // Convert to fixed precision
 }
 
+void funcLayerNorm(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient,
+                   size_t batchSize, size_t N)
+{
+  log_print("funcLayerNorm");
+  // TODO Scale up and complete this computation with higher fixed-point precision
+
+  assert(a.size() == batchSize * N && "funcBatchNorm a size incorrect");
+  assert(b.size() == batchSize && "funcBatchNorm b size incorrect");
+  assert(quotient.size() == batchSize * N && "funcBatchNorm quotient size incorrect");
+
+  RSSVectorMyType scaledA(batchSize * N), b_repeat(batchSize * N);
+  // multiplyByScalar(a, 2, scaledA); //So that a is of precision precision
+  for (int i = 0; i < batchSize; ++i)
+    for (int j = 0; j < N; ++j)
+      b_repeat[i * N + j] = b[i];
+  funcDivision2(a, b_repeat, quotient, batchSize * N);
+}
+
 // Chunk wise maximum of a vector of size rows*columns and maximum is caclulated of every
 // column number of elements. max is a vector of size rows, maxPrime, of rows*columns*columns;
 void funcMaxpool(RSSVectorMyType &a, RSSVectorMyType &max, RSSVectorSmallType &maxPrime,
@@ -1722,6 +1740,125 @@ void funcMaxpool(RSSVectorMyType &a, RSSVectorMyType &max, RSSVectorSmallType &m
     for (size_t j = 0; j < rows; ++j)
       max[j] = max[j] + a[j * columns + i];
   }
+}
+
+
+void funcSoftmax(const RSSVectorMyType &x, RSSVectorMyType &out, size_t batchSize, size_t rows, size_t columns, bool causal) {
+  log_print("funcSoftmax");
+  // TODO Scale up and complete this computation with higher fixed-point precision
+
+  assert(x.size() == batchSize * rows * columns && "funcSoftmax x size incorrect");
+  assert(out.size() == batchSize * rows * columns && "funcSoftmax out size incorrect");
+
+  size_t size = batchSize * rows * columns;
+  // calc exp
+  // 1 + x + 0.5x^2 + 0.1665x^3 + 0.0438x^4
+  const myType constc2 = ((myType)(0.5 * (1 << FLOAT_PRECISION)));
+  const myType constc3 = ((myType)(0.1665 * (1 << FLOAT_PRECISION)));
+  const myType constc4 = ((myType)(0.0438 * (1 << FLOAT_PRECISION)));
+  const myType constOne = ((myType)(1 * (1 << FLOAT_PRECISION)));
+
+  vector<myType> data_c2(size, constc2), data_c3(size, constc3), data_c4(size, constc4), data_one(size, constOne);
+  RSSVectorMyType c2(size), c3(size),c4(size), x2(size), x3(size), x4(size), exp(size);
+  funcGetShares(c2, data_c2);
+  funcGetShares(c3, data_c3);
+  funcGetShares(c4, data_c4);
+  funcGetShares(exp, data_one);
+
+  funcDotProduct(x, x, x2, size, true, FLOAT_PRECISION); 
+  funcDotProduct(x, x2, x3, size, true, FLOAT_PRECISION); 
+  funcDotProduct(x2, x2, x4, size, true, FLOAT_PRECISION);
+
+  funcDotProduct(c2, x2, x2, size, true, FLOAT_PRECISION); 
+  funcDotProduct(c3, x3, x3, size, true, FLOAT_PRECISION); 
+  funcDotProduct(c4, x4, x4, size, true, FLOAT_PRECISION);
+
+  addVectors<RSSMyType>(exp, x, exp, size);
+  addVectors<RSSMyType>(exp, x2, exp, size);
+  addVectors<RSSMyType>(exp, x3, exp, size);
+  addVectors<RSSMyType>(exp, x4, exp, size);
+
+  // vector<myType> tmp(size);
+  // funcReconstruct(exp, tmp, size, "exp", false);
+
+  // for (size_t b = 0; b < batchSize*rows; ++b)
+  // {
+  //   for (size_t l = 0; l < columns; ++l)
+  //   {
+  //       print_linear(tmp[b * columns + l], "FLOAT");
+  //   }
+  //   cout << endl;
+  // }
+  // cout << endl;
+
+  if (causal) {
+    vector<myType> mask(size, constOne);
+    for (long i = 0; i < batchSize; ++i) {
+      for (long j = 0; j < rows; ++j) {
+        for (long k = j+1; k < columns; ++k) {
+          mask[i * (rows * columns) + j * columns + k] = 0;
+        }
+      }
+    }
+    RSSVectorMyType shared_mask(size);
+    funcGetShares(shared_mask, mask);
+    funcDotProduct(shared_mask, exp, exp, size, true, FLOAT_PRECISION);
+  }
+
+  // calc div
+  RSSVectorMyType sums(batchSize * rows);
+  for (long i = 0; i < batchSize * rows; ++i) {
+    for (long j = 0; j < columns; ++j) {
+      if (j == 0) 
+        sums[i] = exp[i * columns + j];
+      else
+        sums[i] = sums[i] + exp[i * columns + j];
+    }
+  }
+  // vector<myType> tmp2(batchSize * rows);
+  // funcReconstruct(sums, tmp2, batchSize * rows, "exp", true);
+  funcLayerNorm(exp, sums, out, batchSize * rows, columns);
+}
+
+void funcSoftmaxAttetion(const RSSVectorMyType &Q, const RSSVectorMyType &K, const RSSVectorMyType &V, RSSVectorMyType &QKV, size_t B, size_t L, size_t H, size_t D, bool causal) {
+  // Q:LxD, K:LxD, V:LxD
+  RSSVectorMyType QK(B * H * L * L);
+  RSSVectorMyType inA(L * D);
+  RSSVectorMyType inB(L * D);
+  RSSVectorMyType out(L*L);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < H; ++j)
+      {
+        copy(Q.begin() + (i * (H * L*D) + j * (L * D)), Q.begin() + (i * (H * L*D) + (j + 1) * (L*D)), inA.begin());
+        copy(K.begin() + (i * (H * L*D) + j * (L * D)), K.begin() + (i * (H * L*D) + (j + 1) * (L*D)), inB.begin());
+        funcMatMul(inA, inB, out, L, D, L, 0, 1, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), QK.begin() + i * (H * L*L) + j * (L * L));
+      }
+    }
+
+  const myType constsqrtdk = ((myType)((1. / sqrt(D)) * (1 << FLOAT_PRECISION)));
+  vector<myType> data_sqrtdk(B * H * L * L, constsqrtdk);
+  RSSVectorMyType sqrtdk(B * H * L * L);
+  funcGetShares(sqrtdk, data_sqrtdk);
+  funcDotProduct(sqrtdk, QK, QK, B * H * L * L, true, FLOAT_PRECISION);
+
+  RSSVectorMyType sQK(B * H * L * L);
+  funcSoftmax(QK, sQK, B * H, L, L, causal);
+
+  inA.resize(L * L);
+  inB.resize(L * D);
+  out.resize(L * D);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < H; ++j)
+      {
+        copy(QK.begin() + (i * (H * L*L) + j * (L * L)), QK.begin() + (i * (H * L*L) + (j + 1) * (L*L)), inA.begin());
+        copy(V.begin() + (i * (H * L*D) + j * (L * D)), V.begin() + (i * (H * L*D) + (j + 1) * (L*D)), inB.begin());
+        funcMatMul(inA, inB, out, L, L, D, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), QKV.begin() + i * (H * L*D) + j * (L * D));
+      }
+    }
 }
 
 /****************************************************************/

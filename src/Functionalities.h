@@ -46,8 +46,12 @@ void funcDivision2(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVector
                   size_t size);
 void funcBatchNorm(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient, 
 							size_t batchSize, size_t B);
+void funcLayerNorm(const RSSVectorMyType &a, const RSSVectorMyType &b, RSSVectorMyType &quotient,
+              size_t batchSize, size_t N);
 void funcMaxpool(RSSVectorMyType &a, RSSVectorMyType &max, RSSVectorSmallType &maxPrime, 
 				size_t rows, size_t columns);
+void funcSoftmax(const RSSVectorMyType &x, RSSVectorMyType &out, size_t batchSize, size_t rows, size_t columns, bool causal);
+void funcSoftmaxAttetion(const RSSVectorMyType &Q, const RSSVectorMyType &K, const RSSVectorMyType &V, RSSVectorMyType &QKV, size_t B, size_t L, size_t H, size_t D, bool causal);
 void aggregateCommunication();
 
 

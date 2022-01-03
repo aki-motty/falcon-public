@@ -65,8 +65,8 @@ void LNLayer::forward(const RSSVectorMyType &inputActivation)
   addVectors<RSSMyType>(temp3, epsilon, temp3, B);
 
   // Square Root
-  RSSVectorMyType beta(B);
-  funcApproxInverseSqrt(temp3, sigma, beta, B);
+  RSSVectorMyType tmp(B);
+  funcApproxInverseSqrt(temp3, sigma, tmp, B);
 
   RSSVectorMyType sigma_repeat(B * m);
   for (int i = 0; i < B; ++i)

@@ -98,18 +98,18 @@ int main(int argc, char **argv)
   uniform_real_distribution<> dist_real(0.0, 1.0);
 
   // test //////////////////////////
-  size_t B = 1;
-  size_t DM = 512;
-  size_t H = 8;
-  size_t L = 64;
-  size_t DFF = 2048;
-  size_t num_layer = 6;
   // size_t B = 1;
-  // size_t DM = 8;
-  // size_t H = 2;
-  // size_t L = 8;
-  // size_t DFF = 4;
-  // size_t num_layer = 2;
+  // size_t DM = 512;
+  // size_t H = 8;
+  // size_t L = 64;
+  // size_t DFF = 2048;
+  // size_t num_layer = 6;
+  size_t B = 1;
+  size_t DM = 8;
+  size_t H = 2;
+  size_t L = 8;
+  size_t DFF = 4;
+  size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
   bool causal = false;
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     {
       for (size_t d = 0; d < DM; ++d)
       {
-        origin_input[b * (L * DM) + l * (DM) + d] = floatToMyType((float)pow(1, b + l + d) * (b + l + d + 0.01));
+        origin_input[b * (L * DM) + l * (DM) + d] = floatToMyType((float)pow(1, b + l + d) * (b + l + d + 0.01) * 0.1);
         // print_linear(origin_input[b * (L * DM) + l * (DM) + d], "FLOAT");
       }
       // cout << endl;
@@ -150,20 +150,20 @@ int main(int argc, char **argv)
   }
   // cout << endl;
   funcGetShares(shared_input, origin_input);
-  start_m();
-  mha->forward(shared_input);
+  // start_m();
+  // mha->forward(shared_input);
   // ffn->forward(shared_input);
   // ln->forward(shared_input);
   // encl->forward(shared_input);
   // enc->forward(shared_input);
   // decl->forward(shared_input, shared_input);
   // dec->forward(shared_input);
-  end_m("mha forward");
+  // end_m("mha forward");
 
-  RSSVectorMyType prevDelta(size);
-  RSSVectorMyType prevEncoderDelta(size);
-  start_m();
-  mha->computeDelta(prevDelta);
+  // RSSVectorMyType prevDelta(size);
+  // RSSVectorMyType prevEncoderDelta(size);
+  // start_m();
+  // mha->computeDelta(prevDelta);
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
@@ -171,14 +171,14 @@ int main(int argc, char **argv)
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  mha->updateEquations(shared_input);
+  // mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);
   // decl->updateEquations(shared_input, shared_input);
   // dec->updateEquations(shared_input);
-  end_m("mhabackward");
+  // end_m("mhabackward");
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
@@ -198,6 +198,61 @@ int main(int argc, char **argv)
   // cout << endl;
   // funcDivision2(shared_input, shared_reverse_input, quotient, size);
   // funcReconstruct(quotient, tmp, size, "quotient", true);
+
+  vector<myType> origin_QK(B*H*L*L);
+  RSSVectorMyType shared_QK(B*H*L*L);
+  for (size_t b = 0; b < B; ++b)
+  {
+    for (size_t h = 0; h < H; ++h) {
+      for (size_t l = 0; l < L; ++l) {
+        for (size_t k = 0; k < L; ++k) {
+          origin_QK[b * (H * L * L) + h * (L * L) + l * L + k] = floatToMyType((float)pow(1, b + l + h + k) * (b + l + h + k + 0.01) * 0.1);
+          // print_linear(origin_QK[b * (H * L * L) + h * (L * L) + l * L + k], "FLOAT");
+        }
+        // cout << endl;
+      }
+      // cout << endl;
+    }
+    // cout << endl;
+  }
+  // cout << endl;
+  funcGetShares(shared_QK, origin_QK);
+
+  // vector<myType> tmp(B*H*L*L);
+  // RSSVectorMyType out(B*H*L*L);
+  // start_m();
+  // for (int i = 0; i < 10; ++i) {
+  //   funcSoftmax(shared_QK, out, B*H, L, L, true);
+  // }
+  // end_m("softmax");
+  
+  // funcReconstruct(out, tmp, B*H*L*L, "softmax", true);
+  // for (size_t b = 0; b < B; ++b)
+  // {
+  //   for (size_t h = 0; h < H; ++h) {
+  //     for (size_t l = 0; l < L; ++l) {
+  //       for (size_t k = 0; k < L; ++k) {
+  //         print_linear(tmp[b * (H * L * L) + h * (L * L) + l * L + k], "FLOAT");
+  //       }
+  //       cout << endl;
+  //     }
+  //     cout << endl;
+  //   }
+  //   cout << endl;
+  // }
+  // cout << endl;
+
+  vector<myType> tmp(B*H*L*D);
+  RSSVectorMyType out(B*H*L*D);
+  start_m();
+  for (int i = 0; i < 10; ++i) {
+    
+      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, false);
+    
+  }
+  end_m("softmaxattention");
+  
+  // funcReconstruct(out, tmp, B*H*L*D, "softmaxAttention", true);
 
   // // set WQ, WK, WV, WO weights ///////////////////////////
   // vector<myType> tmp_weights(DM * DM);
@@ -258,12 +313,12 @@ int main(int argc, char **argv)
   // layer->updateEquations(shared_input);
 
   // end_m(network);
-  cout << "----------------------------------------------" << endl;
-  cout << "Run details: " << NUM_OF_PARTIES << "PC (P" << partyNum
-       << "), " << NUM_ITERATIONS << " iterations, batch size " << MINI_BATCH_SIZE << endl
-       << "Running " << security << " " << network << " on " << dataset << " dataset" << endl;
-  cout << "----------------------------------------------" << endl
-       << endl;
+  // cout << "----------------------------------------------" << endl;
+  // cout << "Run details: " << NUM_OF_PARTIES << "PC (P" << partyNum
+  //      << "), " << NUM_ITERATIONS << " iterations, batch size " << MINI_BATCH_SIZE << endl
+  //      << "Running " << security << " " << network << " on " << dataset << " dataset" << endl;
+  // cout << "----------------------------------------------" << endl
+  //      << endl;
 
   /****************************** CLEAN-UP ******************************/
   delete aes_indep;
