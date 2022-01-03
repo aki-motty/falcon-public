@@ -98,22 +98,33 @@ int main(int argc, char **argv)
   uniform_real_distribution<> dist_real(0.0, 1.0);
 
   // test //////////////////////////
-  // size_t B = 1;
-  // size_t DM = 512;
-  // size_t H = 8;
-  // size_t L = 64;
-  // size_t DFF = 2048;
-  // size_t num_layer = 6;
   size_t B = 1;
-  size_t DM = 8;
-  size_t H = 2;
-  size_t L = 8;
-  size_t DFF = 4;
-  size_t num_layer = 2;
+  size_t DM = 512;
+  size_t H = 8;
+  size_t L = 1;
+  size_t DFF = 2048;
+  size_t num_layer = 6;
+  // size_t B = 1;
+  // size_t DM = 8;
+  // size_t H = 2;
+  // size_t L = 8;
+  // size_t DFF = 4;
+  // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
   bool causal = false;
   float attn_norm = 1.0;
+
+  cout << "B : " << B << endl;
+  cout << "DM : " << DM << endl;
+  cout << "H : " << H << endl;
+  cout << "L : " << L << endl;
+  cout << "DFF : " << DFF << endl;
+  cout << "num_layer : " << num_layer << endl;
+  cout << "D : " << D << endl;
+  cout << "M : " << M << endl;
+  cout << "causal : " << causal << endl;
+ 
   MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
   MHAttention *mha = new MHAttention(cfg_mha, 0);
   // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
