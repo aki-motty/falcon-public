@@ -261,7 +261,7 @@ int main(int argc, char **argv)
   start_m();
   for (int i = 0; i < 10; ++i) {
     
-      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, false);
+      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
   }
   end_m("softmaxattention");
