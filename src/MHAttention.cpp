@@ -2,6 +2,8 @@
 #include "MHAttention.h"
 #include "Functionalities.h"
 #include "Precompute.h"
+#include "secondary.h"
+
 using namespace std;
 
 extern bool LARGE_NETWORK;
@@ -242,7 +244,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   auto V = *(wv->getActivation());
 
   RSSVectorMyType reluQreluKV(B * SL * NH * D);
-
+  start_m();
   if (conf.causal)
   {
     for (size_t l = 0; l < SL; ++l)
@@ -373,6 +375,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
       }
     }
   }
+  end_m("RELU attention");
 
   // vector<myType> output(QKV.size());
   // funcReconstruct(QKV, output, output.size(), "QKV", true);
