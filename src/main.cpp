@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
-  bool causal = false;
+  bool causal = true;
   float attn_norm = 1.0;
 
   cout << "B : " << B << endl;
