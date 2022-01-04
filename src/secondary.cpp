@@ -1372,7 +1372,8 @@ void start_time()
 	}
 
 	tStart = clock();
-	clock_gettime(CLOCK_REALTIME, &requestStart);
+	// clock_gettime(CLOCK_REALTIME, &requestStart);
+	clock_gettime(CLOCK_MONOTONIC, &requestStart);
 	alreadyMeasuringTime = true;
 }
 
@@ -1384,7 +1385,8 @@ void end_time(string str)
 		exit(-1);
 	}
 
-	clock_gettime(CLOCK_REALTIME, &requestEnd);
+	// clock_gettime(CLOCK_REALTIME, &requestEnd);
+	clock_gettime(CLOCK_MONOTONIC, &requestEnd);
 	cout << "----------------------------------------------" << endl;
 	cout << "Wall Clock time for " << str << ": " << diff(requestStart, requestEnd) << " sec\n";
 	cout << "CPU time for " << str << ": " << (double)(clock() - tStart)/CLOCKS_PER_SEC << " sec\n";
