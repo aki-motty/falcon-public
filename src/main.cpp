@@ -125,8 +125,8 @@ int main(int argc, char **argv)
   cout << "M : " << M << endl;
   cout << "causal : " << causal << endl;
  
-  MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
-  MHAttention *mha = new MHAttention(cfg_mha, 0);
+  // MHAttentionConfig *cfg_mha = new MHAttentionConfig(H, L, DM, B, causal, attn_norm, 0);
+  // MHAttention *mha = new MHAttention(cfg_mha, 0);
   // EncoderLayerConfig *cfg_encl = new EncoderLayerConfig(H, L, DM, B, DFF);
   // EncoderLayer *encl = new EncoderLayer(cfg_encl, 0);
   // EncoderConfig *cfg_enc = new EncoderConfig(H, L, DM, B, DFF, num_layer);
@@ -162,15 +162,15 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   // start_m();
-  for (int i = 0; i < 1; ++i) {
-      mha->forward(shared_input);
-      // ffn->forward(shared_input);
-      // ln->forward(shared_input);
-      // encl->forward(shared_input);
-      // enc->forward(shared_input);
-      // decl->forward(shared_input, shared_input);
-      // dec->forward(shared_input);
-  }
+  // for (int i = 0; i < 1; ++i) {
+  //     mha->forward(shared_input);
+  //     // ffn->forward(shared_input);
+  //     // ln->forward(shared_input);
+  //     // encl->forward(shared_input);
+  //     // enc->forward(shared_input);
+  //     // decl->forward(shared_input, shared_input);
+  //     // dec->forward(shared_input);
+  // }
 
   // end_m("forward");
 
@@ -256,15 +256,15 @@ int main(int argc, char **argv)
   // }
   // cout << endl;
 
-  // vector<myType> tmp(B*H*L*D);
-  // RSSVectorMyType out(B*H*L*D);
-  // start_m();
-  // for (int i = 0; i < 1; ++i) {
+  vector<myType> tmp(B*H*L*D);
+  RSSVectorMyType out(B*H*L*D);
+  start_m();
+  for (int i = 0; i < 1; ++i) {
     
-  //     funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
+      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
-  // }
-  // end_m("softmaxattention");
+  }
+  end_m("softmaxattention");
   
   // funcReconstruct(out, tmp, B*H*L*D, "softmaxAttention", true);
 
