@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L =  1;
+  size_t L =  256;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
-  bool causal = true;
+  bool causal = false;
   float attn_norm = 1.0;
 
   cout << "B : " << B << endl;
@@ -162,15 +162,15 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   // start_m();
-  for (int i = 0; i < 5; ++i) {
-      mha->forward(shared_input);
-      // ffn->forward(shared_input);
-      // ln->forward(shared_input);
-      // encl->forward(shared_input);
-      // enc->forward(shared_input);
-      // decl->forward(shared_input, shared_input);
-      // dec->forward(shared_input);
-  }
+  // for (int i = 0; i < 5; ++i) {
+  //     mha->forward(shared_input);
+  //     // ffn->forward(shared_input);
+  //     // ln->forward(shared_input);
+  //     // encl->forward(shared_input);
+  //     // enc->forward(shared_input);
+  //     // decl->forward(shared_input, shared_input);
+  //     // dec->forward(shared_input);
+  // }
 
   // end_m("forward");
 
@@ -256,15 +256,15 @@ int main(int argc, char **argv)
   // }
   // cout << endl;
 
-  // vector<myType> tmp(B*H*L*D);
-  // RSSVectorMyType out(B*H*L*D);
-  // start_m();
-  // for (int i = 0; i < 10; ++i) {
+  vector<myType> tmp(B*H*L*D);
+  RSSVectorMyType out(B*H*L*D);
+  start_m();
+  for (int i = 0; i < 10; ++i) {
     
-  //     funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
+      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
-  // }
-  // end_m("softmaxattention");
+  }
+  end_m("softmaxattention");
   
   // funcReconstruct(out, tmp, B*H*L*D, "softmaxAttention", true);
 
