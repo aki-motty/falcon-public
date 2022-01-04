@@ -224,7 +224,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   }
   // cout << endl;
   funcGetShares(projection_matrix, proj_myType);
-  // start_m();
+  start_m();
   // consider (batch_size * seq_len, d_model) as (batch_size * seq_len * num_heads, depth)
   // relu_kernel_transform
   RSSVectorMyType tmp1((B * SL * NH) * NF);
@@ -377,7 +377,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
       }
     }
   }
-  // end_m("RELU attention");
+  end_m("RELU attention");
 
   // vector<myType> output(QKV.size());
   // funcReconstruct(QKV, output, output.size(), "QKV", true);
