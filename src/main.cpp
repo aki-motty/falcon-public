@@ -259,7 +259,7 @@ int main(int argc, char **argv)
   vector<myType> tmp(B*H*L*D);
   RSSVectorMyType out(B*H*L*D);
   start_m();
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 10; ++i) {
     
       funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
