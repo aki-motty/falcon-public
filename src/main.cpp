@@ -162,15 +162,15 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   // start_m();
-  // for (int i = 0; i < 5; ++i) {
-  //     mha->forward(shared_input);
-  //     // ffn->forward(shared_input);
-  //     // ln->forward(shared_input);
-  //     // encl->forward(shared_input);
-  //     // enc->forward(shared_input);
-  //     // decl->forward(shared_input, shared_input);
-  //     // dec->forward(shared_input);
-  // }
+  for (int i = 0; i < 1; ++i) {
+      mha->forward(shared_input);
+      // ffn->forward(shared_input);
+      // ln->forward(shared_input);
+      // encl->forward(shared_input);
+      // enc->forward(shared_input);
+      // decl->forward(shared_input, shared_input);
+      // dec->forward(shared_input);
+  }
 
   // end_m("forward");
 
@@ -256,15 +256,15 @@ int main(int argc, char **argv)
   // }
   // cout << endl;
 
-  vector<myType> tmp(B*H*L*D);
-  RSSVectorMyType out(B*H*L*D);
-  start_m();
-  for (int i = 0; i < 1; ++i) {
+  // vector<myType> tmp(B*H*L*D);
+  // RSSVectorMyType out(B*H*L*D);
+  // start_m();
+  // for (int i = 0; i < 1; ++i) {
     
-      funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
+  //     funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
-  }
-  end_m("softmaxattention");
+  // }
+  // end_m("softmaxattention");
   
   // funcReconstruct(out, tmp, B*H*L*D, "softmaxAttention", true);
 
