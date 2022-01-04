@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   uniform_real_distribution<> dist_real(0.0, 1.0);
 
   // test //////////////////////////
-  size_t B = 8;
+  size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
   size_t L =  64;
@@ -133,8 +133,8 @@ int main(int argc, char **argv)
   Encoder *enc = new Encoder(cfg_enc, 0);
   // DecoderLayerConfig *cfg_decl = new DecoderLayerConfig(H, L, DM, B, DFF);
   // DecoderLayer *decl = new DecoderLayer(cfg_decl, 0);
-  // DecoderConfig *cfg_dec = new DecoderConfig(H, L, DM, B, DFF, num_layer);
-  // Decoder *dec = new Decoder(cfg_dec, 0, enc);
+  DecoderConfig *cfg_dec = new DecoderConfig(H, L, DM, B, DFF, num_layer);
+  Decoder *dec = new Decoder(cfg_dec, 0, enc);
   // FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
   // FFN *ffn = new FFN(cfg_ffn, 0);
   // LNConfig *cfg_ln = new LNConfig(DM, B * L);
@@ -167,9 +167,9 @@ int main(int argc, char **argv)
       // ffn->forward(shared_input);
       // ln->forward(shared_input);
       // encl->forward(shared_input);
-      enc->forward(shared_input);
+      // enc->forward(shared_input);
       // decl->forward(shared_input, shared_input);
-      // dec->forward(shared_input);
+      dec->forward(shared_input);
   }
 
   end_m("forward");
