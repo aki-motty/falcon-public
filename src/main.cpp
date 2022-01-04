@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L =  1;
+  size_t L =  512;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
   vector<myType> tmp(B*H*L*D);
   RSSVectorMyType out(B*H*L*D);
   start_m();
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 1; ++i) {
     
       funcSoftmaxAttetion(shared_input, shared_input, shared_input, out, B, L, H, D, causal);
     
