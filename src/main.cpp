@@ -162,7 +162,7 @@ int main(int argc, char **argv)
   // cout << endl;
   funcGetShares(shared_input, origin_input);
   // start_m();
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 5; ++i) {
       mha->forward(shared_input);
       // ffn->forward(shared_input);
       // ln->forward(shared_input);
