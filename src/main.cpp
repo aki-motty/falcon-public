@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L =  512;
+  size_t L =  64;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
-  bool causal = true;
+  bool causal = false;
   float attn_norm = 1.0;
 
   cout << "B : " << B << endl;
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
   }
   // cout << endl;
   funcGetShares(shared_input, origin_input);
-  // start_m();
+  start_m();
   for (int i = 0; i < 1; ++i) {
       mha->forward(shared_input);
       // ffn->forward(shared_input);
@@ -172,12 +172,12 @@ int main(int argc, char **argv)
       // dec->forward(shared_input);
   }
 
-  // end_m("forward");
+  end_m("forward");
 
-  // RSSVectorMyType prevDelta(size);
-  // RSSVectorMyType prevEncoderDelta(size);
-  // start_m();
-  // mha->computeDelta(prevDelta);
+  RSSVectorMyType prevDelta(size);
+  RSSVectorMyType prevEncoderDelta(size);
+  start_m();
+  mha->computeDelta(prevDelta);
   // ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
@@ -185,14 +185,15 @@ int main(int argc, char **argv)
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  // mha->updateEquations(shared_input);
+  mha->updateEquations(shared_input);
   // ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);
   // decl->updateEquations(shared_input, shared_input);
   // dec->updateEquations(shared_input);
-  // end_m("mhabackward");
+  end_m("mhabackward");
+
   // vector<myType> tmp(size);
   // RSSVectorMyType alpha(size);
   // RSSVectorMyType beta(size);
