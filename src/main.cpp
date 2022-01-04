@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L =  16;
+  size_t L =  8;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
