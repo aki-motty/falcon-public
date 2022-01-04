@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // size_t num_layer = 2;
   size_t D = DM / H;
   size_t M = static_cast<size_t>(D * log(D));
-  bool causal = true;
+  bool causal = false;
   float attn_norm = 1.0;
 
   cout << "B : " << B << endl;
@@ -135,10 +135,10 @@ int main(int argc, char **argv)
   // DecoderLayer *decl = new DecoderLayer(cfg_decl, 0);
   // DecoderConfig *cfg_dec = new DecoderConfig(H, L, DM, B, DFF, num_layer);
   // Decoder *dec = new Decoder(cfg_dec, 0, enc);
-  // FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
-  // FFN *ffn = new FFN(cfg_ffn, 0);
-  // LNConfig *cfg_ln = new LNConfig(DM, B * L);
-  // LNLayer *ln = new LNLayer(cfg_ln, 0);
+  FFNConfig *cfg_ffn = new FFNConfig(B, L, DM, DFF);
+  FFN *ffn = new FFN(cfg_ffn, 0);
+  LNConfig *cfg_ln = new LNConfig(DM, B * L);
+  LNLayer *ln = new LNLayer(cfg_ln, 0);
 
   size_t size = B * L * H * D;
 
@@ -163,8 +163,8 @@ int main(int argc, char **argv)
   funcGetShares(shared_input, origin_input);
   start_m();
   for (int i = 0; i < 1; ++i) {
-      mha->forward(shared_input);
-      // ffn->forward(shared_input);
+      // mha->forward(shared_input);
+      ffn->forward(shared_input);
       // ln->forward(shared_input);
       // encl->forward(shared_input);
       // enc->forward(shared_input);
@@ -177,16 +177,16 @@ int main(int argc, char **argv)
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
   start_m();
-  mha->computeDelta(prevDelta);
-  // ffn->computeDelta(prevDelta);
+  // mha->computeDelta(prevDelta);
+  ffn->computeDelta(prevDelta);
   // ln->computeDelta(prevDelta);
   // encl->computeDelta(prevDelta);
   // enc->computeDelta(prevDelta);
   // decl->computeDelta(prevDelta, prevEncoderDelta);
   // dec->computeDelta(prevDelta);
 
-  mha->updateEquations(shared_input);
-  // ffn->updateEquations(shared_input);
+  // mha->updateEquations(shared_input);
+  ffn->updateEquations(shared_input);
   // ln->updateEquations(shared_input);
   // encl->updateEquations(shared_input);
   // enc->updateEquations(shared_input);
