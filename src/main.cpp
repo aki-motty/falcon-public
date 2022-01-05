@@ -98,7 +98,7 @@ int main(int argc, char **argv)
   uniform_real_distribution<> dist_real(0.0, 1.0);
 
   // test //////////////////////////
-  size_t B = 2;
+  size_t B = 8;
   size_t DM = 512;
   size_t H = 8;
   size_t L =  64;
