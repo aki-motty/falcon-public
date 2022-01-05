@@ -29,6 +29,7 @@ private:
   RSSVectorMyType nreluQreluKV;
 
 	RSSVectorMyType shared_mask;
+	RSSVectorMyType reluQreluK;
 
 	vector<float> createProjectionMatrix(size_t m, size_t d, size_t seed = 0, size_t scaling = 0);
 	void createProductsOfGivensRotations(vector<float>& q, size_t dim, default_random_engine& engine);

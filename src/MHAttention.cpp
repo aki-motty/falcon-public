@@ -21,7 +21,8 @@ MHAttention::MHAttention(MHAttentionConfig *conf, int _layerNum)
       reluKV(conf->batchSize * conf->num_heads * conf->nb_features * conf->depth),
       sums(conf->seq_len * conf->batchSize * conf->num_heads * conf->nb_features * conf->depth),
       nreluQreluKV(conf->batchSize * conf->seq_len * conf->num_heads * conf->depth),
-      shared_mask(conf->seq_len * conf->seq_len)
+      shared_mask(conf->seq_len * conf->seq_len),
+      reluQreluK(conf->batchSize * conf->num_heads * conf->seq_len * conf->seq_len)
 {
   initialize();
 };
@@ -234,7 +235,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   }
   // cout << endl;
   funcGetShares(projection_matrix, proj_myType);
-  start_m();
+  // start_m();
   // consider (batch_size * seq_len, d_model) as (batch_size * seq_len * num_heads, depth)
   // relu_kernel_transform
   RSSVectorMyType tmp1((B * SL * NH) * NF);
@@ -308,7 +309,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
     }
 
     // reluQreluK (B, H, L, M) * (B, H, M, L) -> (B, H, L, L)
-    RSSVectorMyType reluQreluK(B*NH*SL*SL);
+    // RSSVectorMyType reluQreluK(B*NH*SL*SL);
     RSSVectorMyType inA(SL * NF);
     RSSVectorMyType inB(NF * SL);
     RSSVectorMyType out(SL * SL);
@@ -483,7 +484,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
       }
     }
   }
-  end_m("RELU attention");
+  // end_m("RELU attention");
 
   // vector<myType> output(QKV.size());
   // funcReconstruct(QKV, output, output.size(), "QKV", true);
@@ -562,35 +563,131 @@ void MHAttention::forward(const RSSVectorMyType &encoderActivation, const RSSVec
 
   if (conf.causal)
   {
-    for (size_t l = 0; l < SL; ++l)
+    // Q(KV)
+    // transpose Q (B, L, H, M) -> (B, H, L, M)
+    RSSVectorMyType t_reluQ(B * NH * NF * SL);
+    for (size_t i = 0; i < B; ++i)
     {
-      for (size_t b = 0; b < B; ++b)
+      for (size_t j = 0; j < SL; ++j)
       {
-        for (size_t h = 0; h < NH; ++h)
+        for (size_t k = 0; k < NH; ++k)
         {
-          RSSVectorMyType reluK_i(NF);
-          copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
-          RSSVectorMyType V_i(D);
-          copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
-          RSSVectorMyType reluKV_i(NF * D);
-          funcMatMul(reluK_i, V_i, reluKV_i, NF, 1, D, 0, 0, FLOAT_PRECISION);
-          for (size_t t = 0; t < NF * D; ++t)
+          for (size_t l = 0; l < NF; ++l)
           {
-            if (l == 0)
-              sums[b * (NH * NF * D) + h * (NF * D) + t] = reluKV_i[t];
-            else
-              sums[l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D) + t] = sums[l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D) + t] + reluKV_i[t];
+            t_reluQ[i * (NH * SL * NF) + k * (SL * NF) + j * NF + l] = reluQ[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
           }
-
-          RSSVectorMyType reluQ_i(NF);
-          copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
-          copy(sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D)), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), reluKV_i.begin());
-          RSSVectorMyType reluQreluKV_i(D);
-          funcMatMul(reluQ_i, reluKV_i, reluQreluKV_i, 1, NF, D, 0, 0, FLOAT_PRECISION);
-          copy(reluQreluKV_i.begin(), reluQreluKV_i.end(), reluQreluKV.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
         }
       }
     }
+
+    // transpose K (B, L, H, M) -> (B, H, M, L)
+    RSSVectorMyType t_reluK(B * NH * NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            t_reluK[i * (NH * NF * SL) + k * (NF * SL) + l * SL + j] = reluK[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+
+    // transpose V (B, L, H, D) -> (B, H, L, D)
+    RSSVectorMyType t_V(B * NH * NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < D; ++l)
+          {
+            t_V[i * (NH * SL * D) + k * (SL * D) + j * D + l] = V[i * (SL * NH * D) + j * (NH * D) + k * D + l];
+          }
+        }
+      }
+    }
+
+    // reluQreluK (B, H, L, M) * (B, H, M, L) -> (B, H, L, L)
+    // RSSVectorMyType reluQreluK(B*NH*SL*SL);
+    RSSVectorMyType inA(SL * NF);
+    RSSVectorMyType inB(NF * SL);
+    RSSVectorMyType out(SL * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_reluQ.begin() + (i * (NH * SL * NF) + j * (SL * NF)), t_reluQ.begin() + (i * (NH * SL * NF) + (j + 1) * (SL * NF)), inA.begin());
+        copy(t_reluK.begin() + (i * (NH * NF * SL) + j * (NF * SL)), t_reluK.begin() + (i * (NH * NF * SL) + (j + 1) * (NF * SL)), inA.begin());
+        funcMatMul(inA, inB, out, SL, NF, SL, 0, 0, FLOAT_PRECISION);
+        funcDotProduct(out, shared_mask, out, SL * SL, true, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), reluQreluK.begin() + i * (NH * SL * SL) + j * (SL * SL));
+      }
+    }
+
+    // QKV (B, H, L, L) * (B, H, L, D) -> (B, H, L, D)
+    RSSVectorMyType t_reluQreluKV(B * NH * SL * D);
+    inA.resize(SL * SL);
+    inB.resize(SL * D);
+    out.resize(SL * D);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inA.begin());
+        copy(t_V.begin() + (i * (NH * SL * D) + j * (SL * D)), t_V.begin() + (i * (NH * SL * D) + (j + 1) * (SL * D)), inB.begin());
+        funcMatMul(inA, inB, out, SL, SL, D, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), t_reluQreluKV.begin() + i * (NH * SL * D) + j * (SL * D));
+      }
+    }
+
+    // transpose QKV (B, H, L, D) -> (B, L, H, D)
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < SL; ++k)
+        {
+          for (size_t l = 0; l < D; ++l)
+          {
+            reluQreluKV[i * (SL * NH * D) + k * (NH * D) + j * D + l] = t_reluQreluKV[i * (NH * SL * D) + j * (SL * D) + k * D + l];
+          }
+        }
+      }
+    }
+    // for (size_t l = 0; l < SL; ++l)
+    // {
+    //   for (size_t b = 0; b < B; ++b)
+    //   {
+    //     for (size_t h = 0; h < NH; ++h)
+    //     {
+    //       RSSVectorMyType reluK_i(NF);
+    //       copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
+    //       RSSVectorMyType V_i(D);
+    //       copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
+    //       RSSVectorMyType reluKV_i(NF * D);
+    //       funcMatMul(reluK_i, V_i, reluKV_i, NF, 1, D, 0, 0, FLOAT_PRECISION);
+    //       for (size_t t = 0; t < NF * D; ++t)
+    //       {
+    //         if (l == 0)
+    //           sums[b * (NH * NF * D) + h * (NF * D) + t] = reluKV_i[t];
+    //         else
+    //           sums[l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D) + t] = sums[l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D) + t] + reluKV_i[t];
+    //       }
+
+    //       RSSVectorMyType reluQ_i(NF);
+    //       copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
+    //       copy(sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D)), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), reluKV_i.begin());
+    //       RSSVectorMyType reluQreluKV_i(D);
+    //       funcMatMul(reluQ_i, reluKV_i, reluQreluKV_i, 1, NF, D, 0, 0, FLOAT_PRECISION);
+    //       copy(reluQreluKV_i.begin(), reluQreluKV_i.end(), reluQreluKV.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
+    //     }
+    //   }
+    // }
   }
   else
   {
@@ -734,50 +831,225 @@ void MHAttention::computeDelta(RSSVectorMyType &prevDelta)
 
   if (conf.causal)
   {
-    RSSVectorMyType d_reluKV_sum(B * NH * NF * D);
-    for (long l = SL - 1; l > 0; --l)
+    // transpose d_reluQreluKV (B, L, H, D) -> (B, H, L, D)
+    RSSVectorMyType t_d_reluQreluKV(B * NH * SL * D);
+    for (size_t i = 0; i < B; ++i)
     {
-      for (size_t b = 0; b < B; ++b)
+      for (size_t j = 0; j < SL; ++j)
       {
-        for (size_t h = 0; h < NH; ++h)
+        for (size_t k = 0; k < NH; ++k)
         {
-          RSSVectorMyType d_reluQ_i(NF);
-          RSSVectorMyType d_reluQreluKV_i(D);
-          copy(d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), d_reluQreluKV_i.begin());
-          RSSVectorMyType sum(NF * D);
-          copy(sums.begin() + l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), sum.begin());
-          funcMatMul(d_reluQreluKV_i, sum, d_reluQ_i, 1, D, NF, 0, 1, FLOAT_PRECISION);
-          copy(d_reluQ_i.begin(), d_reluQ_i.end(), d_reluQ.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
-
-          RSSVectorMyType d_reluKV_i(NF * D);
-          RSSVectorMyType reluQ_i(NF);
-          copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
-          funcMatMul(reluQ_i, d_reluQreluKV_i, d_reluKV_i, NF, 1, D, 1, 0, FLOAT_PRECISION);
-
-          // add 前のやつ
-          for (size_t t = 0; t < NF * D; ++t)
+          for (size_t l = 0; l < D; ++l)
           {
-            if (l == SL - 1)
-              d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_i[t];
-            else
-              d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] + d_reluKV_i[t];
+            t_d_reluQreluKV[i * (NH * SL * D) + k * (SL * D) + j * D + l] = d_reluQreluKV[i * (SL * NH * D) + j * (NH * D) + k * D + l];
           }
-
-          RSSVectorMyType d_reluK_i(NF);
-          RSSVectorMyType d_V_i(D);
-          RSSVectorMyType d_reluKV_sum_i(NF * D);
-          RSSVectorMyType reluK_i(NF);
-          RSSVectorMyType V_i(D);
-          copy(d_reluKV_sum.begin() + (b * (NH * NF * D) + h * (NF * D)), d_reluKV_sum.begin() + (b * (NH * NF * D) + (h + 1) * (NF * D)), d_reluKV_sum_i.begin());
-          copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
-          copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
-          funcMatMul(d_reluKV_sum_i, V_i, d_reluK_i, NF, D, 1, 0, 1, FLOAT_PRECISION);
-          funcMatMul(reluK_i, d_reluKV_sum_i, d_V_i, 1, NF, D, 1, 0, FLOAT_PRECISION);
-          copy(d_reluK_i.begin(), d_reluK_i.end(), d_reluK.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
-          copy(d_V_i.begin(), d_V_i.end(), d_V.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
         }
       }
     }
+
+    // RSSVectorMyType d_V(B * NH * SL * D);
+
+    // transpose reluQreluK (B, H, L1, L2) -> (B, H, L2, L1)
+    RSSVectorMyType t_reluQreluK(B * NH * SL * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < SL; ++k)
+        {
+          for (size_t l = 0; l < SL; ++l)
+          {
+            t_reluQreluK[i * (NH * SL * SL) + j * (SL * SL) + l * SL + k] = reluQreluK[i * (NH * SL * SL) + j * (SL * SL) + k * SL + l];
+          }
+        }
+      }
+    }
+
+    RSSVectorMyType inA(SL * SL);
+    RSSVectorMyType inB(SL * D);
+    RSSVectorMyType out(SL * D);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), t_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inA.begin());
+        copy(t_d_reluQreluKV.begin() + (i * (NH * SL * D) + j * (SL * D)), t_d_reluQreluKV.begin() + (i * (NH * SL * D) + (j + 1) * (SL * D)), inB.begin());
+        funcMatMul(inA, inB, out, SL, SL, D, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), d_V.begin() + i * (NH * SL * D) + j * (SL * D));
+      }
+    }
+    
+    RSSVectorMyType d_reluQreluK(B * NH * SL * SL);
+
+    // transpose V (B, L, H, D) -> (B, H, D, L)
+    RSSVectorMyType t_V(B * NH * D * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < D; ++l)
+          {
+            t_V[i * (NH * D * SL) + k * (D * SL) + l * SL + j] = V[i * (SL * NH * D) + j * (NH * D) + k * D + l];
+          }
+        }
+      }
+    }
+
+    inA.resize(SL * D);
+    inB.resize(D * SL);
+    out.resize(SL * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_d_reluQreluKV.begin() + (i * (NH * SL * D) + j * (SL * D)), t_d_reluQreluKV.begin() + (i * (NH * SL * D) + (j + 1) * (SL * D)), inA.begin());
+        copy(t_V.begin() + (i * (NH * D * SL) + j * (D * SL)), t_V.begin() + (i * (NH * D * SL) + (j + 1) * (D * SL)), inB.begin());
+        funcMatMul(inA, inB, out, SL, D, SL, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), d_reluQreluK.begin() + i * (NH * SL * SL) + j * (SL * SL));
+      }
+    }
+    
+    // d_reluQreluK * t_reluK = t_d_reluQ (B, H, L, L) * (B, H, L, M) -> (B, H, L, M)
+    RSSVectorMyType t_d_reluQ(B * NH * SL * NF);
+
+    // transpose reluK (B, L, H, M) -> (B, H, L, M)
+    RSSVectorMyType t_reluK(B * NH * SL * NF);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            t_reluK[i * (NH * SL * NF) + k * (SL * NF) + j * NF + l] = reluK[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+
+    inA.resize(SL * SL);
+    inB.resize(SL * NF);
+    out.resize(SL * NF);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(d_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), d_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inA.begin());
+        copy(t_reluK.begin() + (i * (NH * SL * NF) + j * (SL * NF)), t_reluK.begin() + (i * (NH * SL * NF) + (j + 1) * (SL * NF)), inB.begin());
+        funcMatMul(inA, inB, out, SL, SL, NF, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), t_d_reluQ.begin() + i * (NH * SL * NF) + j * (SL * NF));
+      }
+    }
+    
+    RSSVectorMyType t_d_reluK(B * NH * NF * SL);
+
+    // transpose reluQ (B, L, H, M) -> (B, H, M, L)
+    RSSVectorMyType t_reluQ(B * NH * NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            t_reluQ[i * (NH * NF * SL) + k * (NF * SL) + l * SL + j] = reluQ[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+    inA.resize(NF * SL);
+    inB.resize(SL * SL);
+    out.resize(NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_reluQ.begin() + (i * (NH * NF * SL) + j * (NF * SL)), t_reluQ.begin() + (i * (NH * NF * SL) + (j + 1) * (NF * SL)), inA.begin());
+        copy(d_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), d_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inB.begin());
+        funcMatMul(inA, inB, out, NF, SL, SL, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), t_d_reluK.begin() + i * (NH * NF * SL) + j * (NF * SL));
+      }
+    }
+    
+    // transpose t_d_reluQ (B, H, L, M) -> (B, L, H, M)
+
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < SL; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            d_reluQ[i * (SL * NH * NF) + k * (NH * NF) + j * NF + l] = t_d_reluQ[i * (NH * SL * NF) + j * (SL * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+
+    // transpose d_reluK (B, H, M, L) -> (B, L, H, M)
+
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < NF; ++k)
+        {
+          for (size_t l = 0; l < SL; ++l)
+          {
+            d_reluK[i * (SL * NH * NF) + l * (NH * NF) + j * NF + k] = t_d_reluK[i * (NH * NF * SL) + j * (NF * SL) + k * SL + l];
+          }
+        }
+      }
+    }
+    // RSSVectorMyType d_reluKV_sum(B * NH * NF * D);
+    // for (long l = SL - 1; l > 0; --l)
+    // {
+    //   for (size_t b = 0; b < B; ++b)
+    //   {
+    //     for (size_t h = 0; h < NH; ++h)
+    //     {
+    //       RSSVectorMyType d_reluQ_i(NF);
+    //       RSSVectorMyType d_reluQreluKV_i(D);
+    //       copy(d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), d_reluQreluKV_i.begin());
+    //       RSSVectorMyType sum(NF * D);
+    //       copy(sums.begin() + l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), sum.begin());
+    //       funcMatMul(d_reluQreluKV_i, sum, d_reluQ_i, 1, D, NF, 0, 1, FLOAT_PRECISION);
+    //       copy(d_reluQ_i.begin(), d_reluQ_i.end(), d_reluQ.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
+
+    //       RSSVectorMyType d_reluKV_i(NF * D);
+    //       RSSVectorMyType reluQ_i(NF);
+    //       copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
+    //       funcMatMul(reluQ_i, d_reluQreluKV_i, d_reluKV_i, NF, 1, D, 1, 0, FLOAT_PRECISION);
+
+    //       // add 前のやつ
+    //       for (size_t t = 0; t < NF * D; ++t)
+    //       {
+    //         if (l == SL - 1)
+    //           d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_i[t];
+    //         else
+    //           d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] + d_reluKV_i[t];
+    //       }
+
+    //       RSSVectorMyType d_reluK_i(NF);
+    //       RSSVectorMyType d_V_i(D);
+    //       RSSVectorMyType d_reluKV_sum_i(NF * D);
+    //       RSSVectorMyType reluK_i(NF);
+    //       RSSVectorMyType V_i(D);
+    //       copy(d_reluKV_sum.begin() + (b * (NH * NF * D) + h * (NF * D)), d_reluKV_sum.begin() + (b * (NH * NF * D) + (h + 1) * (NF * D)), d_reluKV_sum_i.begin());
+    //       copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
+    //       copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
+    //       funcMatMul(d_reluKV_sum_i, V_i, d_reluK_i, NF, D, 1, 0, 1, FLOAT_PRECISION);
+    //       funcMatMul(reluK_i, d_reluKV_sum_i, d_V_i, 1, NF, D, 1, 0, FLOAT_PRECISION);
+    //       copy(d_reluK_i.begin(), d_reluK_i.end(), d_reluK.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
+    //       copy(d_V_i.begin(), d_V_i.end(), d_V.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
+    //     }
+    //   }
+    // }
   }
   else
   {
@@ -942,7 +1214,8 @@ void MHAttention::computeDelta(RSSVectorMyType &prevDelta)
       }
     }
   }
-  // ----------------------
+  
+  // ---------------------- 
   RSSVectorMyType d_npQ(B * SL * NH * NF);
   RSSVectorMyType d_npK(B * SL * NH * NF);
 
@@ -1001,50 +1274,225 @@ void MHAttention::computeDelta(RSSVectorMyType &prevEncoderDelta, RSSVectorMyTyp
 
   if (conf.causal)
   {
-    RSSVectorMyType d_reluKV_sum(B * NH * NF * D);
-    for (long l = SL - 1; l > 0; --l)
+    // transpose d_reluQreluKV (B, L, H, D) -> (B, H, L, D)
+    RSSVectorMyType t_d_reluQreluKV(B * NH * SL * D);
+    for (size_t i = 0; i < B; ++i)
     {
-      for (size_t b = 0; b < B; ++b)
+      for (size_t j = 0; j < SL; ++j)
       {
-        for (size_t h = 0; h < NH; ++h)
+        for (size_t k = 0; k < NH; ++k)
         {
-          RSSVectorMyType d_reluQ_i(NF);
-          RSSVectorMyType d_reluQreluKV_i(D);
-          copy(d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), d_reluQreluKV_i.begin());
-          RSSVectorMyType sum(NF * D);
-          copy(sums.begin() + l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), sum.begin());
-          funcMatMul(d_reluQreluKV_i, sum, d_reluQ_i, 1, D, NF, 0, 1, FLOAT_PRECISION);
-          copy(d_reluQ_i.begin(), d_reluQ_i.end(), d_reluQ.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
-
-          RSSVectorMyType d_reluKV_i(NF * D);
-          RSSVectorMyType reluQ_i(NF);
-          copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
-          funcMatMul(reluQ_i, d_reluQreluKV_i, d_reluKV_i, NF, 1, D, 1, 0, FLOAT_PRECISION);
-
-          // add 前のやつ
-          for (size_t t = 0; t < NF * D; ++t)
+          for (size_t l = 0; l < D; ++l)
           {
-            if (l == SL - 1)
-              d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_i[t];
-            else
-              d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] + d_reluKV_i[t];
+            t_d_reluQreluKV[i * (NH * SL * D) + k * (SL * D) + j * D + l] = d_reluQreluKV[i * (SL * NH * D) + j * (NH * D) + k * D + l];
           }
-
-          RSSVectorMyType d_reluK_i(NF);
-          RSSVectorMyType d_V_i(D);
-          RSSVectorMyType d_reluKV_sum_i(NF * D);
-          RSSVectorMyType reluK_i(NF);
-          RSSVectorMyType V_i(D);
-          copy(d_reluKV_sum.begin() + (b * (NH * NF * D) + h * (NF * D)), d_reluKV_sum.begin() + (b * (NH * NF * D) + (h + 1) * (NF * D)), d_reluKV_sum_i.begin());
-          copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
-          copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
-          funcMatMul(d_reluKV_sum_i, V_i, d_reluK_i, NF, D, 1, 0, 1, FLOAT_PRECISION);
-          funcMatMul(reluK_i, d_reluKV_sum_i, d_V_i, 1, NF, D, 1, 0, FLOAT_PRECISION);
-          copy(d_reluK_i.begin(), d_reluK_i.end(), d_reluK.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
-          copy(d_V_i.begin(), d_V_i.end(), d_V.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
         }
       }
     }
+
+    // RSSVectorMyType d_V(B * NH * SL * D);
+
+    // transpose reluQreluK (B, H, L1, L2) -> (B, H, L2, L1)
+    RSSVectorMyType t_reluQreluK(B * NH * SL * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < SL; ++k)
+        {
+          for (size_t l = 0; l < SL; ++l)
+          {
+            t_reluQreluK[i * (NH * SL * SL) + j * (SL * SL) + l * SL + k] = reluQreluK[i * (NH * SL * SL) + j * (SL * SL) + k * SL + l];
+          }
+        }
+      }
+    }
+
+    RSSVectorMyType inA(SL * SL);
+    RSSVectorMyType inB(SL * D);
+    RSSVectorMyType out(SL * D);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), t_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inA.begin());
+        copy(t_d_reluQreluKV.begin() + (i * (NH * SL * D) + j * (SL * D)), t_d_reluQreluKV.begin() + (i * (NH * SL * D) + (j + 1) * (SL * D)), inB.begin());
+        funcMatMul(inA, inB, out, SL, SL, D, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), d_V.begin() + i * (NH * SL * D) + j * (SL * D));
+      }
+    }
+
+    RSSVectorMyType d_reluQreluK(B * NH * SL * SL);
+
+    // transpose V (B, L, H, D) -> (B, H, D, L)
+    RSSVectorMyType t_V(B * NH * D * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < D; ++l)
+          {
+            t_V[i * (NH * D * SL) + k * (D * SL) + l * SL + j] = V[i * (SL * NH * D) + j * (NH * D) + k * D + l];
+          }
+        }
+      }
+    }
+
+    inA.resize(SL * D);
+    inB.resize(D * SL);
+    out.resize(SL * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_d_reluQreluKV.begin() + (i * (NH * SL * D) + j * (SL * D)), t_d_reluQreluKV.begin() + (i * (NH * SL * D) + (j + 1) * (SL * D)), inA.begin());
+        copy(t_V.begin() + (i * (NH * D * SL) + j * (D * SL)), t_V.begin() + (i * (NH * D * SL) + (j + 1) * (D * SL)), inB.begin());
+        funcMatMul(inA, inB, out, SL, D, SL, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), d_reluQreluK.begin() + i * (NH * SL * SL) + j * (SL * SL));
+      }
+    }
+
+    // d_reluQreluK * t_reluK = t_d_reluQ (B, H, L, L) * (B, H, L, M) -> (B, H, L, M)
+    RSSVectorMyType t_d_reluQ(B * NH * SL * NF);
+
+    // transpose reluK (B, L, H, M) -> (B, H, L, M)
+    RSSVectorMyType t_reluK(B * NH * SL * NF);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            t_reluK[i * (NH * SL * NF) + k * (SL * NF) + j * NF + l] = reluK[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+
+    inA.resize(SL * SL);
+    inB.resize(SL * NF);
+    out.resize(SL * NF);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(d_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), d_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inA.begin());
+        copy(t_reluK.begin() + (i * (NH * SL * NF) + j * (SL * NF)), t_reluK.begin() + (i * (NH * SL * NF) + (j + 1) * (SL * NF)), inB.begin());
+        funcMatMul(inA, inB, out, SL, SL, NF, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), t_d_reluQ.begin() + i * (NH * SL * NF) + j * (SL * NF));
+      }
+    }
+
+    RSSVectorMyType t_d_reluK(B * NH * NF * SL);
+
+    // transpose reluQ (B, L, H, M) -> (B, H, M, L)
+    RSSVectorMyType t_reluQ(B * NH * NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < SL; ++j)
+      {
+        for (size_t k = 0; k < NH; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            t_reluQ[i * (NH * NF * SL) + k * (NF * SL) + l * SL + j] = reluQ[i * (SL * NH * NF) + j * (NH * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+    inA.resize(NF * SL);
+    inB.resize(SL * SL);
+    out.resize(NF * SL);
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        copy(t_reluQ.begin() + (i * (NH * NF * SL) + j * (NF * SL)), t_reluQ.begin() + (i * (NH * NF * SL) + (j + 1) * (NF * SL)), inA.begin());
+        copy(d_reluQreluK.begin() + (i * (NH * SL * SL) + j * (SL * SL)), d_reluQreluK.begin() + (i * (NH * SL * SL) + (j + 1) * (SL * SL)), inB.begin());
+        funcMatMul(inA, inB, out, NF, SL, SL, 0, 0, FLOAT_PRECISION);
+        copy(out.begin(), out.end(), t_d_reluK.begin() + i * (NH * NF * SL) + j * (NF * SL));
+      }
+    }
+
+    // transpose t_d_reluQ (B, H, L, M) -> (B, L, H, M)
+
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < SL; ++k)
+        {
+          for (size_t l = 0; l < NF; ++l)
+          {
+            d_reluQ[i * (SL * NH * NF) + k * (NH * NF) + j * NF + l] = t_d_reluQ[i * (NH * SL * NF) + j * (SL * NF) + k * NF + l];
+          }
+        }
+      }
+    }
+
+    // transpose d_reluK (B, H, M, L) -> (B, L, H, M)
+
+    for (size_t i = 0; i < B; ++i)
+    {
+      for (size_t j = 0; j < NH; ++j)
+      {
+        for (size_t k = 0; k < NF; ++k)
+        {
+          for (size_t l = 0; l < SL; ++l)
+          {
+            d_reluK[i * (SL * NH * NF) + l * (NH * NF) + j * NF + k] = t_d_reluK[i * (NH * NF * SL) + j * (NF * SL) + k * SL + l];
+          }
+        }
+      }
+    }
+    // RSSVectorMyType d_reluKV_sum(B * NH * NF * D);
+    // for (long l = SL - 1; l > 0; --l)
+    // {
+    //   for (size_t b = 0; b < B; ++b)
+    //   {
+    //     for (size_t h = 0; h < NH; ++h)
+    //     {
+    //       RSSVectorMyType d_reluQ_i(NF);
+    //       RSSVectorMyType d_reluQreluKV_i(D);
+    //       copy(d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), d_reluQreluKV.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), d_reluQreluKV_i.begin());
+    //       RSSVectorMyType sum(NF * D);
+    //       copy(sums.begin() + l * (B * NH * NF * D) + b * (NH * NF * D) + h * (NF * D), sums.begin() + (l * (B * NH * NF * D) + b * (NH * NF * D) + (h + 1) * (NF * D)), sum.begin());
+    //       funcMatMul(d_reluQreluKV_i, sum, d_reluQ_i, 1, D, NF, 0, 1, FLOAT_PRECISION);
+    //       copy(d_reluQ_i.begin(), d_reluQ_i.end(), d_reluQ.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
+
+    //       RSSVectorMyType d_reluKV_i(NF * D);
+    //       RSSVectorMyType reluQ_i(NF);
+    //       copy(reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluQ.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluQ_i.begin());
+    //       funcMatMul(reluQ_i, d_reluQreluKV_i, d_reluKV_i, NF, 1, D, 1, 0, FLOAT_PRECISION);
+
+    //       // add 前のやつ
+    //       for (size_t t = 0; t < NF * D; ++t)
+    //       {
+    //         if (l == SL - 1)
+    //           d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_i[t];
+    //         else
+    //           d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] = d_reluKV_sum[b * (NH * NF * D) + h * (NF * D) + t] + d_reluKV_i[t];
+    //       }
+
+    //       RSSVectorMyType d_reluK_i(NF);
+    //       RSSVectorMyType d_V_i(D);
+    //       RSSVectorMyType d_reluKV_sum_i(NF * D);
+    //       RSSVectorMyType reluK_i(NF);
+    //       RSSVectorMyType V_i(D);
+    //       copy(d_reluKV_sum.begin() + (b * (NH * NF * D) + h * (NF * D)), d_reluKV_sum.begin() + (b * (NH * NF * D) + (h + 1) * (NF * D)), d_reluKV_sum_i.begin());
+    //       copy(reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + h * (NF)), reluK.begin() + (b * (SL * NH * NF) + l * (NH * NF) + (h + 1) * (NF)), reluK_i.begin());
+    //       copy(V.begin() + (b * (SL * NH * D) + l * (NH * D) + h * (D)), V.begin() + (b * (SL * NH * D) + l * (NH * D) + (h + 1) * (D)), V_i.begin());
+    //       funcMatMul(d_reluKV_sum_i, V_i, d_reluK_i, NF, D, 1, 0, 1, FLOAT_PRECISION);
+    //       funcMatMul(reluK_i, d_reluKV_sum_i, d_V_i, 1, NF, D, 1, 0, FLOAT_PRECISION);
+    //       copy(d_reluK_i.begin(), d_reluK_i.end(), d_reluK.begin() + b * (SL * NH * NF) + l * (NH * NF) + h * NF);
+    //       copy(d_V_i.begin(), d_V_i.end(), d_V.begin() + b * (SL * NH * D) + l * (NH * D) + h * D);
+    //     }
+    //   }
+    // }
   }
   else
   {
