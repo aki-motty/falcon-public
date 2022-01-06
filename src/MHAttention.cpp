@@ -235,7 +235,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   }
   // cout << endl;
   funcGetShares(projection_matrix, proj_myType);
-  // start_m();
+  start_m();
   // consider (batch_size * seq_len, d_model) as (batch_size * seq_len * num_heads, depth)
   // relu_kernel_transform
   RSSVectorMyType tmp1((B * SL * NH) * NF);
@@ -256,7 +256,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
   auto V = *(wv->getActivation());
 
   RSSVectorMyType reluQreluKV(B * SL * NH * D);
-  
+  // start_m();
   if (conf.causal)
   {
     // Q(KV)
@@ -355,6 +355,8 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
         }
       }
     }
+
+
     // RSSVectorMyType reluK_i(NF);
     // RSSVectorMyType V_i(D);
     // RSSVectorMyType reluKV_i(NF * D);
@@ -484,7 +486,7 @@ void MHAttention::forward(const RSSVectorMyType &inputActivation)
       }
     }
   }
-  // end_m("RELU attention");
+  end_m("RELU attention");
 
   // vector<myType> output(QKV.size());
   // funcReconstruct(QKV, output, output.size(), "QKV", true);
@@ -1006,6 +1008,8 @@ void MHAttention::computeDelta(RSSVectorMyType &prevDelta)
         }
       }
     }
+
+
     // RSSVectorMyType d_reluKV_sum(B * NH * NF * D);
     // for (long l = SL - 1; l > 0; --l)
     // {
