@@ -17,7 +17,7 @@ IP5=3.9.234.48  			#London
 NETWORK=SecureML 			# NETWORK {SecureML, Sarda, MiniONN, LeNet, AlexNet, and VGG16}
 DATASET=MNIST 			# DATASET {MNIST, CIFAR10, and ImageNet}
 SECURITY=Semi-honest 		# SECURITY {Semi-honest or Malicious} 
-RUN_TYPE=WAN 				# RUN_TYPE {LAN or WAN or localhost}
+RUN_TYPE=LAN 				# RUN_TYPE {LAN or WAN or localhost}
 PRINT_TO_FILE=true			# PRINT_TO_FILE {true or false}
 FILENAME=time.txt
 #########################################################################################

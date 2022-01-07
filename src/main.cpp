@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   size_t B = 1;
   size_t DM = 512;
   size_t H = 8;
-  size_t L =  2048;
+  size_t L =  64;
   size_t DFF = 2048;
   size_t num_layer = 6;
   // size_t B = 1;
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
   }
   // cout << endl;
   funcGetShares(shared_input, origin_input);
-  // start_m();
+  start_m();
   for (int i = 0; i < 1; ++i) {
       mha->forward(shared_input);
       // ffn->forward(shared_input);
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
       // dec->forward(shared_input);
   }
 
-  // end_m("forward");
+  end_m("forward");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
