@@ -169,10 +169,68 @@ int main(int argc, char **argv)
       // encl->forward(shared_input);
       // enc->forward(shared_input);
       // decl->forward(shared_input, shared_input);
-      dec->forward(shared_input);
+      // dec->forward(shared_input);
   }
 
   end_m("forward");
+
+  size = 1;
+  RSSVectorMyType x(size);
+  vector<myType> orix(size, floatToMyType(2.));
+  funcGetShares(x, orix);
+
+  RSSVectorMyType xx(size);
+  start_m();
+  funcDotProduct(x, x, xx, size, true, FLOAT_PRECISION);
+  end_m("mult");
+  // calc exp
+  // 1 + x + 0.5x^2 + 0.1665x^3 + 0.0438x^4
+  start_m();
+  const myType constc2 = ((myType)(0.5 * (1 << FLOAT_PRECISION)));
+  const myType constc3 = ((myType)(0.1665 * (1 << FLOAT_PRECISION)));
+  const myType constc4 = ((myType)(0.0438 * (1 << FLOAT_PRECISION)));
+  const myType constOne = ((myType)(1 * (1 << FLOAT_PRECISION)));
+
+  vector<myType> data_c2(size, constc2), data_c3(size, constc3), data_c4(size, constc4), data_c5(size, constc4), data_one(size, constOne);
+  RSSVectorMyType c2(size), c3(size), c4(size), c5(size), x2(size), x3(size), x4(size), x5(size), exp(size);
+  funcGetShares(c2, data_c2);
+  funcGetShares(c3, data_c3);
+  funcGetShares(c4, data_c4);
+  funcGetShares(c5, data_c5);
+  funcGetShares(exp, data_one);
+
+  funcDotProduct(x, x, x2, size, true, FLOAT_PRECISION); 
+  funcDotProduct(x, x2, x3, size, true, FLOAT_PRECISION); 
+  funcDotProduct(x2, x2, x4, size, true, FLOAT_PRECISION);
+  funcDotProduct(x, x4, x5, size, true, FLOAT_PRECISION);
+
+  funcDotProduct(c2, x2, x2, size, true, FLOAT_PRECISION); 
+  funcDotProduct(c3, x3, x3, size, true, FLOAT_PRECISION); 
+  funcDotProduct(c4, x4, x4, size, true, FLOAT_PRECISION);
+  funcDotProduct(c5, x5, x5, size, true, FLOAT_PRECISION);
+
+  addVectors<RSSMyType>(exp, x, exp, size);
+  addVectors<RSSMyType>(exp, x2, exp, size);
+  addVectors<RSSMyType>(exp, x3, exp, size);
+  addVectors<RSSMyType>(exp, x4, exp, size);
+  addVectors<RSSMyType>(exp, x5, exp, size);
+  end_m("exp");
+
+  RSSVectorMyType relu(size);
+  RSSVectorSmallType p(size);
+  start_m();
+  funcRELU(x, p, relu, size);
+  end_m("relu");
+
+  RSSVectorMyType q(size);
+  start_m();
+  funcDivision2(x, x, q, size);
+  end_m("div");
+
+  RSSVectorMyType isqrt(size);
+  start_m();
+  funcApproxInverseSqrt(x, isqrt, q, size);
+  end_m("invsqrt");
 
   RSSVectorMyType prevDelta(size);
   RSSVectorMyType prevEncoderDelta(size);
